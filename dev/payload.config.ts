@@ -1,6 +1,17 @@
+import type { Config } from 'payload'
+
 import { payloadAiPlugin } from '@ai-stack/payloadcms'
 import { sqliteAdapter } from '@payloadcms/db-sqlite'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
+import { de } from '@payloadcms/translations/languages/de'
+import { en } from '@payloadcms/translations/languages/en'
+import { es } from '@payloadcms/translations/languages/es'
+import { fa } from '@payloadcms/translations/languages/fa'
+import { fr } from '@payloadcms/translations/languages/fr'
+import { nb } from '@payloadcms/translations/languages/nb'
+import { pl } from '@payloadcms/translations/languages/pl'
+import { ru } from '@payloadcms/translations/languages/ru'
+import { uk } from '@payloadcms/translations/languages/uk'
 import path from 'path'
 import { buildConfig } from 'payload'
 import sharp from 'sharp'
@@ -19,8 +30,19 @@ if (!process.env.ROOT_DIR) {
   process.env.ROOT_DIR = dirname
 }
 
-const buildConfigWithMemoryDB = async () => {
+const supportedLanguages = {
+  de,
+  en,
+  es,
+  fa,
+  fr,
+  nb,
+  pl,
+  ru,
+  uk,
+} as NonNullable<NonNullable<Config['i18n']>['supportedLanguages']>
 
+const buildConfigWithMemoryDB = async () => {
   return buildConfig({
     admin: {
       dependencies: {
@@ -33,10 +55,7 @@ const buildConfigWithMemoryDB = async () => {
         baseDir: path.resolve(dirname),
       },
     },
-    collections: [
-      Media,
-      Posts,
-    ],
+    collections: [Media, Posts],
     db: sqliteAdapter({
       client: {
         url: process.env.DATABASE_URI || `file:${path.resolve(dirname, 'dev.db')}`,
@@ -46,6 +65,15 @@ const buildConfigWithMemoryDB = async () => {
     }),
     editor: lexicalEditor(),
     email: testEmailAdapter,
+    i18n: {
+      fallbackLanguage: 'en',
+      supportedLanguages,
+    },
+    localization: {
+      defaultLocale: 'en',
+      fallback: true,
+      locales: ['en', 'de', 'es', 'fa', 'fr', 'nb', 'pl', 'ru', 'uk'],
+    },
     plugins: [
       payloadAiPlugin({
         collections: {
@@ -60,6 +88,12 @@ const buildConfigWithMemoryDB = async () => {
             data: result.data,
             file: result.file,
           })
+        },
+        providers: {
+          openai: {
+            // Uncomment to test config-provided credentials. If omitted, the plugin falls back to standard provider env vars like OPENAI_API_KEY.
+            // apiKey: process.env.PAYLOAD_AI_TEST_OPENAI_API_KEY
+          },
         },
         uploadCollectionSlug: 'media',
       }),
